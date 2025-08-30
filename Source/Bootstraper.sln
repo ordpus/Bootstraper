@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entrypoint", "Entrypoint\Entrypoint.csproj", "{46C41D28-141D-4C8F-BA92-1F5C491C75DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimworldBootstraper", "RimworldBootstraper\RimworldBootstraper.csproj", "{F8CC0D5D-B2D9-4B4C-BD5B-80FA583C3EC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bootstrap", "Bootstrap\Bootstrap.csproj", "{345418AE-59FA-4C77-9559-9AB1A75ED47B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BootstrapApi", "BootstrapApi\BootstrapApi.csproj", "{E7AFCEBF-C345-4064-916F-832387E73F81}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{46C41D28-141D-4C8F-BA92-1F5C491C75DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46C41D28-141D-4C8F-BA92-1F5C491C75DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46C41D28-141D-4C8F-BA92-1F5C491C75DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46C41D28-141D-4C8F-BA92-1F5C491C75DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8CC0D5D-B2D9-4B4C-BD5B-80FA583C3EC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8CC0D5D-B2D9-4B4C-BD5B-80FA583C3EC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8CC0D5D-B2D9-4B4C-BD5B-80FA583C3EC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8CC0D5D-B2D9-4B4C-BD5B-80FA583C3EC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{345418AE-59FA-4C77-9559-9AB1A75ED47B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{345418AE-59FA-4C77-9559-9AB1A75ED47B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{345418AE-59FA-4C77-9559-9AB1A75ED47B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{345418AE-59FA-4C77-9559-9AB1A75ED47B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7AFCEBF-C345-4064-916F-832387E73F81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7AFCEBF-C345-4064-916F-832387E73F81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7AFCEBF-C345-4064-916F-832387E73F81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7AFCEBF-C345-4064-916F-832387E73F81}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
