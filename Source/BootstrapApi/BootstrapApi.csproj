@@ -14,16 +14,15 @@
         <PackageId>BootstrapApi</PackageId>
         <AssemblyName>BootstrapApi</AssemblyName>
     </PropertyGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8"/>
-        <PackageReference Include="System.Threading.Channels" Version="9.0.8">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+        <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
+        <PackageReference Include="System.Threading.Channels" Version="9.0.8"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\BootstrapApiCodeGenerator\BootstrapApiCodeGenerator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
 </Project>

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net48</TargetFramework>
+        <Product>My first plugin</Product>
+        <Version>1.0.0</Version>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
+        <RestoreAdditionalProjectSources>
+            https://api.nuget.org/v3/index.json;
+            https://nuget.bepinex.dev/v3/index.json;
+            https://nuget.samboy.dev/v3/index.json 
+        </RestoreAdditionalProjectSources>
+        <RootNamespace>RimworldBootstrap</RootNamespace>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>../../Assemblies</OutputPath>
+        <PackageId>RimworldBootstrap</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4543" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BootstrapApi\BootstrapApi.csproj" >
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </ProjectReference>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Publicize Include="Assembly-CSharp:Verse.LongEventHandler.toExecuteWhenFinished" />
+        <Publicize Include="Assembly-CSharp:Verse.KeyPrefs.data" />
+    </ItemGroup>
+</Project>

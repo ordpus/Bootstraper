@@ -1,39 +1,52 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using BootstrapApi.Logger;
+using Bootstrap;
 
-using Microsoft.Extensions.Logging;
+using BootstrapApi.Logger;
 
 namespace Entrypoint;
 
 [IsExternalInit]
 [Serializable]
-public record ModifiedAssembly(string sha256, byte[] assembly);
+public record ModifiedAssembly(string name, string sha256, byte[] assembly);
 
 internal static class BootstrapEntrypoint {
+    
     internal static void Start() {
         try {
-            File.WriteAllLines("Bootstrap/bootstrap1.log", ["Start!"]);
             Assembly.LoadFrom("Bootstrap/core/BootstrapApi.dll");
+            if (BootstrapData.Instance == null) return;
             var loaderDomainSetup = new AppDomainSetup {
-                PrivateBinPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Bootstrap/core")
+                PrivateBinPath = "Bootstrap/core;RimWorldWin64_Data/Managed"
             };
             var loaderDomain = AppDomain.CreateDomain("Loader", null, loaderDomainSetup);
             var executor = (LoaderExecutor)loaderDomain.CreateInstanceAndUnwrap(
                 typeof(LoaderExecutor).Assembly.FullName,
                 typeof(LoaderExecutor).FullName!);
-            var result = executor.Execute();
-            BootstrapLog.Logger.LogInformation("sha256: {}", result[0].sha256);
+            var result = executor.Execute(executor.PreExecute());
+            AppDomain.Unload(loaderDomain);
+            BootstrapLog.LogInformation("Unload");
         } catch (Exception e) {
-            BootstrapLog.Logger.LogError(e, "123");
+            BootstrapLog.ErrorLogger.WriteLine(e.ToString());
         }
     }
 }
 
 internal class LoaderExecutor : MarshalByRefObject {
-    public List<ModifiedAssembly> Execute() {
-        var assembly = Assembly.LoadFrom("Bootstrap/core/Bootstrap.dll");
+
+    public List<ModifiedAssembly> PreExecute() {
+        var assembly = Assembly.LoadFile(Path.GetFullPath("Bootstrap/core/Bootstrap.dll"));
+        return (List<ModifiedAssembly>)assembly.GetType("Bootstrap.Loader")
+                                               .GetMethod(
+                                                   "PreStart",
+                                                   BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)!
+                                               .Invoke(null, []);
+    }
+    
+    public List<ModifiedAssembly> Execute(List<ModifiedAssembly> modified) {
+        modified.ForEach(x => Assembly.Load(x.assembly));
+        var assembly = Assembly.LoadFile(Path.GetFullPath("Bootstrap/core/Bootstrap.dll"));
         return (List<ModifiedAssembly>)assembly.GetType("Bootstrap.Loader")
                                                .GetMethod(
                                                    "Start",
