@@ -1,4 +1,5 @@
-using System.Buffers;
+extern alias SystemBuffers;
+extern alias SystemMemory;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -8,6 +9,8 @@ using System.Threading.Channels;
 using Bootstrap;
 
 using Microsoft.Extensions.Logging;
+
+using SystemBuffers::System.Buffers;
 
 // ReSharper disable once CheckNamespace
 namespace BootstrapApi.Logger;
@@ -30,7 +33,6 @@ public class AsyncQueuedStreamWriter : IAsyncStreamWriter {
     private readonly ChannelReader<string> _reader;
     private readonly ChannelWriter<string> _writer;
     private readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
-    private readonly EventWaitHandle? _waitHandle;
     private readonly Task _task;
     private volatile bool _disposed;
 
@@ -38,10 +40,9 @@ public class AsyncQueuedStreamWriter : IAsyncStreamWriter {
     private readonly int _batchTimeout;
 
     public AsyncQueuedStreamWriter(
-        StreamWriter stream, EventWaitHandle? waitHandle, int maxQueueSize = 1000, int batchSize = 128,
+        StreamWriter stream, int maxQueueSize = 1000, int batchSize = 128,
         int batchTimeoutMillisecond = 100) {
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-        _waitHandle = waitHandle;
         _batchSize = batchSize;
         _batchTimeout = batchTimeoutMillisecond;
 
@@ -73,19 +74,6 @@ public class AsyncQueuedStreamWriter : IAsyncStreamWriter {
         return !_disposed && _writer.TryWrite(content);
     }
 
-    private async Task Flush() {
-        if (_waitHandle != null) {
-            var acquired = _waitHandle.WaitOne(TimeSpan.FromSeconds(10));
-            if (!acquired) return;
-            try {
-                await _stream.FlushAsync();
-            } finally {
-                if (acquired) _waitHandle.Set();
-            }
-        } else
-            await _stream.FlushAsync();
-    }
-
     private async Task ConsumerLoop(CancellationToken cancellation) {
         try {
             var count = 0;
@@ -93,7 +81,7 @@ public class AsyncQueuedStreamWriter : IAsyncStreamWriter {
 
             while (!cancellation.IsCancellationRequested) {
                 if (count >= _batchSize) {
-                    await Flush();
+                    await _stream.FlushAsync();
                     count = 0;
                 }
 
@@ -123,12 +111,12 @@ public class AsyncQueuedStreamWriter : IAsyncStreamWriter {
                     } else {
                         lastTimeout = true;
                         readCts.Cancel();
-                        await Flush();
+                        await _stream.FlushAsync();
                     }
                 }
             }
 
-            await Flush();
+            await _stream.FlushAsync();
         } catch (OperationCanceledException) { } catch (Exception e) {
             await BootstrapLog.ErrorLogger.WriteLineAsync(e.ToString());
         }
@@ -173,21 +161,14 @@ public class LoggerProvider : ILoggerProvider {
         return Sha256.ComputeHash(Encoding.UTF8.GetBytes(fullPath)).ToHexString();
     }
 
-    private static EventWaitHandle GetWaitHandle(string filePath, string hashKey) {
-        try {
-            if (!File.ReadAllLines("Bootstrap/logs/clean.lock").Contains(hashKey)) {
-                File.WriteAllText(filePath, "");
-                File.AppendAllLines("Bootstrap/logs/clean.lock", [hashKey]);
-            }
-        } catch (Exception e) {
-            BootstrapLog.ErrorLogger.WriteLine(e.ToString());
-            throw;
-        }
-
-        return new EventWaitHandle(
-            true,
-            EventResetMode.AutoReset,
-            $"Global\\FileLock_{hashKey}");
+    private static StreamWriter GetWriter(string filePath) {
+        File.WriteAllText(filePath, "");
+        return new StreamWriter(
+            new FileStream(
+                filePath,
+                FileMode.Append,
+                FileAccess.Write,
+                FileShare.ReadWrite | FileShare.Delete));
     }
 
     public static LoggerProvider Create(string filePath, int categoryLength = 10) {
@@ -197,19 +178,7 @@ public class LoggerProvider : ILoggerProvider {
                     ? filePath
                     : filePath.ToLower();
             var hashKey = GetHashKey(unifiedFilePath);
-            var stream = StreamWriters.GetOrAdd(
-                hashKey,
-                _ => {
-                    var handle = GetWaitHandle(unifiedFilePath, hashKey);
-                    return new AsyncQueuedStreamWriter(
-                        stream: new StreamWriter(
-                            new FileStream(
-                                filePath,
-                                FileMode.Append,
-                                FileAccess.Write,
-                                FileShare.ReadWrite | FileShare.Delete)),
-                        waitHandle: handle);
-                });
+            var stream = StreamWriters.GetOrAdd(hashKey, _ => new AsyncQueuedStreamWriter(GetWriter(filePath)));
             var directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory)) Directory.CreateDirectory(directory);
             return new LoggerProvider(hashKey, stream, categoryLength);
@@ -280,21 +249,17 @@ public class Logger(string categoryName, LogLevel level, IAsyncStreamWriter writ
     }
 
     public IDisposable BeginScope<TState>(TState state) where TState : notnull {
-        if (state == null) {
-            throw new ArgumentNullException(nameof(state));
-        }
-
-        return NullScope.Instance;
+        return state == null ? throw new ArgumentNullException(nameof(state)) : NullScope.Instance;
     }
 }
 
-public static partial class BootstrapLog {
+public static class BootstrapLog {
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     public static readonly LoggerProvider DefaultProvider;
     public static readonly Logger DefaultLogger;
 
     public static readonly StreamWriter ErrorLogger =
-        new($"Bootstrap/logs/error-{AppDomain.CurrentDomain.FriendlyName}.log") { AutoFlush = true };
+        new("Bootstrap/logs/error.log") { AutoFlush = true };
 
     static BootstrapLog() {
         DefaultProvider = LoggerProvider.Create("Bootstrap/logs/bootstrap.log");

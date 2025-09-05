@@ -1,40 +1,26 @@
-﻿// ReSharper disable once CheckNamespace
+﻿using System.Runtime.InteropServices;
+// ReSharper disable once CheckNamespace
 
 namespace BootstrapApi;
-
-public interface IDefaultValueInjector {
-    object? Supply(object? value);
-}
-
-public abstract class DefaultValueInjector<TP, TR> : IDefaultValueInjector {
-    public abstract TR? Supply(TP? value);
-
-    public object? Supply(object? value) {
-        return Supply((TP?)value);
-    }
-}
 
 [AttributeUsage(AttributeTargets.Method)]
 public class AddFieldAttribute : Attribute;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class FreePatchAttribute(string id, string module) : Attribute {
-    public string id = id;
-    public string module = module;
+public class FreePatchAttribute(string id, string module, string[] importModules) : Attribute {
+    public readonly string ID = id;
+    public readonly string Module = module;
+    public readonly string[] ImportModules = importModules;
 }
 
 [AttributeUsage(AttributeTargets.Method)]
-public class DefaultValueAttribute(object? value) : Attribute {
-    public object? value = value;
-}
+public class DefaultValueDirectAttribute(object value) : Attribute;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class DefaultValueInjectorAttribute : Attribute {
-    public IDefaultValueInjector injector;
+public class DefaultValueInjectorAttribute(string method) : Attribute;
 
-    public DefaultValueInjectorAttribute(Type type) {
-        if (!type.IsSubclassOf(typeof(IDefaultValueInjector)))
-            throw new ArgumentException($"Expected subclass if IDefaultValueInjector, but is {type.FullName}");
-        injector = (IDefaultValueInjector)Activator.CreateInstance(type);
-    }
-}
+[AttributeUsage(AttributeTargets.Method)]
+public class InjectComponentAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Method)]
+public class InjectModExtensionAttribute : Attribute;

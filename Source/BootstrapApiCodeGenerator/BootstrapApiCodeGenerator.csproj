@@ -1,16 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <LangVersion>13</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
         <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
         <EnableSourceGeneratorDebugging>true</EnableSourceGeneratorDebugging>
-        <RootNamespace>BootstrapCodeGenerator</RootNamespace>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

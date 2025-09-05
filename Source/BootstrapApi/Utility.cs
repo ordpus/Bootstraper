@@ -1,3 +1,14 @@
+using System.Reflection;
+
+using BootstrapApi.Logger;
+
+using Microsoft.Extensions.Logging;
+
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+
+using MonoMod.Utils;
+
 namespace Bootstrap;
 
 public static class Utility {
@@ -14,14 +25,47 @@ public static class Utility {
             result[i * 2] = chars[b >> 4];
             result[i * 2 + 1] = chars[b & 0x0F];
         }
+
         return new string(result);
     }
 
-    public static string ToStringSafeDictionary<TKey, TValue>(this IDictionary<TKey, TValue>? dict) {
-        return dict == null ? "null" : $"{{ {string.Join(", ", dict.Select(pair => $"{{ {pair.Key} = {pair.Value} }}"))} }}";
+    public static byte[] GetFileData(this Assembly asm) {
+        return asm.IsDynamic ? [] : File.ReadAllBytes(asm.Location);
     }
 
-    public static string ToStringSafeDictionary<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue>? dict) {
-        return dict == null ? "null" : $"{{ {string.Join(", ", dict.Select(pair => $"{{ {pair.Key} = {pair.Value} }}"))} }}";
+    public static byte[] GetRawBytes(this AssemblyDefinition asm) {
+        using var stream = new MemoryStream();
+        asm.Write(stream);
+        return stream.ToArray();
+    }
+
+    public static T? Get<T>(this CustomAttribute attribute, string name) {
+        return (T)attribute.Fields
+                           .FirstOrDefault(x => x.Name == name).Argument.Value;
+    }
+
+    public static T? GetConstructor<T>(this CustomAttribute attribute, int index) {
+        var result = attribute.ConstructorArguments[index].Value;
+        if (result is CustomAttributeArgument argument) return (T)argument.Value;
+        return (T)result;
+    }
+    
+    internal static void InsertBefore(
+        MethodDefinition method, Func<Instruction, bool> predicate, List<Instruction> toInsert) {
+        var instructions = method.Body.Instructions;
+        var il = method.Body.GetILProcessor();
+        var toInsertNew = toInsert.ToList();
+        var first = toInsertNew[0];
+        toInsertNew.RemoveAt(0);
+        var i = 0;
+        while (i < instructions.Count) {
+            var elem = instructions[i++];
+            if (!predicate(elem)) continue;
+            var (opcode, operand) = (elem.OpCode, elem.Operand);
+            (elem.OpCode, elem.Operand) = (first.OpCode, elem.Operand);
+            var finalToInsert = toInsertNew.Concat([il.Create(opcode, operand)]).ToList();
+            instructions.InsertRange(i, finalToInsert);
+            i += finalToInsert.Count;
+        }
     }
 }

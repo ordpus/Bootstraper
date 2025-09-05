@@ -9,31 +9,31 @@
         <RestoreAdditionalProjectSources>
             https://api.nuget.org/v3/index.json;
             https://nuget.bepinex.dev/v3/index.json;
-            https://nuget.samboy.dev/v3/index.json 
+            https://nuget.samboy.dev/v3/index.json
         </RestoreAdditionalProjectSources>
         <RootNamespace>RimworldBootstrap</RootNamespace>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <OutputPath>../../Assemblies</OutputPath>
-        <PackageId>RimworldBootstrap</PackageId>
+        <PackageId>RimWorldBootstrap</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4543" />
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4566" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BootstrapApi\BootstrapApi.csproj" >
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </ProjectReference>
+        <Publicize Include="Assembly-CSharp:Verse.LongEventHandler.toExecuteWhenFinished"/>
+        <Publicize Include="Assembly-CSharp:Verse.KeyPrefs.data"/>
+        <Publicize Include="mscorlib:System.Reflection.RuntimeAssembly"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <Publicize Include="Assembly-CSharp:Verse.LongEventHandler.toExecuteWhenFinished" />
-        <Publicize Include="Assembly-CSharp:Verse.KeyPrefs.data" />
+      <Reference Include="BootstrapApi">
+        <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
+      </Reference>
     </ItemGroup>
 </Project>

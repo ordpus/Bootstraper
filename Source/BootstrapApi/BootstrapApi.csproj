@@ -8,21 +8,33 @@
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
-        <RootNamespace>Bootstrap</RootNamespace>
+        <RootNamespace>BootstrapApi</RootNamespace>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>../../../../Bootstrap/core</OutputPath>
         <PackageId>BootstrapApi</PackageId>
         <AssemblyName>BootstrapApi</AssemblyName>
     </PropertyGroup>
-    
+
     <ItemGroup>
+        <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8"/>
-        <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
+        <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+        <PackageReference Include="MonoMod.Utils" Version="25.0.8" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="9.0.8"/>
+        <ProjectReference Include="..\BootstrapApiCodeGenerator\BootstrapApiCodeGenerator.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BootstrapApiCodeGenerator\BootstrapApiCodeGenerator.csproj"
-                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <PackageReference Include="System.Memory" Version="4.5.5">
+            <Aliases>SystemMemory</Aliases>
+        </PackageReference>
+        <PackageReference Include="System.Buffers" Version="4.5.1">
+            <Aliases>SystemBuffers</Aliases>
+        </PackageReference>
     </ItemGroup>
 </Project>
