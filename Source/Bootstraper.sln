@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RimWorldBootstrap", "RimWor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BootstrapApi", "BootstrapApi\BootstrapApi.csproj", "{E7AFCEBF-C345-4064-916F-832387E73F81}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BootstrapApiCodeGenerator", "BootstrapApiCodeGenerator\BootstrapApiCodeGenerator.csproj", "{7088923D-F455-419B-AB6F-E7102A0AC55A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bootstrap", "Bootstrap\Bootstrap.csproj", "{BB8B5800-F1C8-4B75-A327-FFD49047DB9F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E7AFCEBF-C345-4064-916F-832387E73F81} = {E7AFCEBF-C345-4064-916F-832387E73F81}
@@ -38,10 +36,6 @@ Global
 		{E7AFCEBF-C345-4064-916F-832387E73F81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7AFCEBF-C345-4064-916F-832387E73F81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7AFCEBF-C345-4064-916F-832387E73F81}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7088923D-F455-419B-AB6F-E7102A0AC55A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7088923D-F455-419B-AB6F-E7102A0AC55A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7088923D-F455-419B-AB6F-E7102A0AC55A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7088923D-F455-419B-AB6F-E7102A0AC55A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BB8B5800-F1C8-4B75-A327-FFD49047DB9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BB8B5800-F1C8-4B75-A327-FFD49047DB9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB8B5800-F1C8-4B75-A327-FFD49047DB9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
