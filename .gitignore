@@ -429,3 +429,6 @@ go.work.sum
 # env file
 .env
 
+!Assemblies
+!Bootstrap
+!Doorstop
