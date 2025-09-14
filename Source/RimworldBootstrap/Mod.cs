@@ -1,14 +1,6 @@
 #nullable enable
-using Microsoft.Extensions.Logging;
-
-using BootstrapApi.Logger;
-
-using FieldAttributes = Mono.Cecil.FieldAttributes;
 
 using System.Reflection;
-using System.Linq;
-
-using Mono.Cecil;
 
 using BootstrapApi;
 
@@ -16,9 +8,11 @@ using Bootstrap;
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 
-using BootstrapApi.Patcher;
+using Bootstrap.Patcher;
 
 using RimWorld;
 
@@ -29,29 +23,37 @@ using Verse.Sound;
 
 namespace RimWorldBootstrap;
 
-// ReSharper disable once UnusedType.Global
 // ReSharper disable once ClassNeverInstantiated.Global
-public class RimworldBootstrapMod : Mod {
-    public static readonly BindingFlags all = BindingFlags.Instance
-                                              | BindingFlags.Static
-                                              | BindingFlags.Public
-                                              | BindingFlags.NonPublic
-                                              | BindingFlags.GetField
-                                              | BindingFlags.SetField
-                                              | BindingFlags.GetProperty
-                                              | BindingFlags.SetProperty;
-
-
+public class RimWorldBootstrapMod : Mod {
     internal const string Arg = "bootstrap";
 
-    public RimworldBootstrapMod(ModContentPack content) : base(content) {
-        if (ShouldReload()) {
-            Patcher.Patch();
-            PopupWindow("bootstrap");
-            // CommandlineUtil.Restart("bootstrap");
+    public RimWorldBootstrapMod(ModContentPack content) : base(content) {
+        if (!AppDomain.CurrentDomain.GetAssemblies().Any(x => x.GetName().Name.Equals("BootstrapApi.dll"))) {
+            Assembly.LoadFrom(Path.Combine(Content.RootDir, "Bootstrap", "core", "BootstrapApi.dll"));
+            Assembly.LoadFrom(Path.Combine(Content.RootDir, "Bootstrap", "core", "Bootstrap.dll"));
+        }
+
+        if (CopyFolder())
+            CommandlineUtil.Restart(content.RootDir, "copy");
+        else if (ShouldReload()) {
+            Patch();
+            // PopupWindow("bootstrap");
+            CommandlineUtil.Restart(content.RootDir, "bootstrap");
         }
 
         if (ShouldPopupWindow()) PopupWindow("test");
+    }
+
+    private static void Patch() {
+        AssemblySet.Reset();
+        BootstrapPluginManager.Register(
+            new PostInitInfo(
+                typeof(ThingWithComps),
+                typeof(ThingComp),
+                AssemblySet.FindMethodDefinition(
+                    $"{typeof(ThingWithComps).FullName}:{nameof(ThingWithComps.InitializeComps)}")!,
+                new DefaultPostInitProvider(nameof(ThingWithComps.GetComp))));
+        Patcher.Patch();
     }
 
     private static void PopupWindow(string phase) {
@@ -71,7 +73,33 @@ public class RimworldBootstrapMod : Mod {
     }
 
     private static bool ShouldReload() {
-        return !GenCommandLine.TryGetCommandLineArg(Arg, out _);
+        return !GenCommandLine.TryGetCommandLineArg(Arg, out var phase) || phase == "copy";
+    }
+
+    private bool CopyFolder() {
+        if (!Directory.Exists("Bootstrap")
+            || !Directory.GetFiles(Path.Combine(Content.RootDir, "Doorstop")).Select(Path.GetFileName).All(File.Exists))
+            return true;
+
+        Directory.CreateDirectory(Path.Combine("Bootstrap", "asms"));
+        Directory.CreateDirectory(Path.Combine("Bootstrap", "core"));
+        Directory.CreateDirectory(Path.Combine("Bootstrap", "data"));
+        Directory.CreateDirectory(Path.Combine("Bootstrap", "logs"));
+        var dst = Directory.GetFiles(Path.Combine("Bootstrap", "core"));
+        var src = Directory.GetFiles(Path.Combine(Content.RootDir, "Bootstrap", "core"));
+        return !src.Select(Path.GetFileName).SequenceEqual(dst.Select(Path.GetFileName))
+               || src.Any(srcFile => File.ReadAllBytes(srcFile).ToSHA256Hex()
+                                     != File.ReadAllBytes(
+                                                Path.Combine(
+                                                    "Bootstrap",
+                                                    "core",
+                                                    Path.GetFileName(srcFile)))
+                                            .ToSHA256Hex())
+               || !Directory.GetFiles(Path.Combine(Content.RootDir, "Doorstop")).Select(Path.GetFileName)
+                            .All(File.Exists)
+               || Directory.GetFiles(Path.Combine(Content.RootDir, "Doorstop")).Any(srcFile =>
+                   File.ReadAllBytes(srcFile).ToSHA256Hex()
+                   != File.ReadAllBytes(Path.GetFileName(srcFile)).ToSHA256Hex());
     }
 }
 
@@ -79,23 +107,24 @@ public class UIRoot_RimworldBootstrap(string phase) : UIRoot {
     public override void UIRootOnGUI() {
         base.UIRootOnGUI();
         if (Widgets.ButtonText(new Rect(500, 500, 500, Text.LineHeight * 2), "OK", true, false))
-            CommandlineUtil.Restart(phase);
+            CommandlineUtil.Restart(LoadedModManager.GetMod<RimWorldBootstrapMod>().Content.RootDir, phase);
     }
 }
 
 internal static class CommandlineUtil {
     private static int s_starting;
 
-    public static void Restart(string phase) {
+    public static void Restart(string rootDir, string phase) {
         if (Interlocked.CompareExchange(ref s_starting, 1, 0) == 1) return;
         try {
             var commandLineArgs = Environment.GetCommandLineArgs();
             var fileName = commandLineArgs[0];
-            var arguments = $"{string.Join(" ", commandLineArgs[1..])} -{RimworldBootstrapMod.Arg}={phase}";
+            var arguments =
+                $"{string.Join(" ", commandLineArgs[1..].Where(x => !x.StartsWith("-bootstrap=")))} -{RimWorldBootstrapMod.Arg}={phase}";
             var pid = Process.GetCurrentProcess().Id;
             var info = UnityData.platform == RuntimePlatform.WindowsPlayer
-                ? GetPowershellInfo(fileName, arguments, pid)
-                : GetBashInfo(fileName, arguments, pid);
+                ? GetPowershellInfo(rootDir, fileName, arguments, pid)
+                : GetBashInfo(rootDir, fileName, arguments, pid);
             info.Environment.Clear();
             info.Environment.AddRange(BootstrapData.InitEnvs);
 
@@ -115,44 +144,23 @@ internal static class CommandlineUtil {
         }
     }
 
-    private static ProcessStartInfo GetPowershellInfo(string fileName, string arguments, int pid) {
-        var execute = $"& '{fileName}' {arguments}";
+    private static ProcessStartInfo GetPowershellInfo(string rootDir, string fileName, string arguments, int pid) {
+        var execute =
+            $"Copy-Item -Path '{Path.Combine(rootDir, "Bootstrap")}' -Destination '.' -Recurse -Force ; "
+            + $"Copy-Item -Path '{Path.Combine(rootDir, "Doorstop", "*")}' -Destination '.' -Recurse -Force ;"
+            + $"& '{fileName}' {arguments}";
         var monitor = $"while (Get-Process -Id {pid} -ErrorAction SilentlyContinue) {{ Start-Sleep -Seconds 0.5 }}";
         var script = $"-ExecutionPolicy Bypass -Command \" {monitor} ; {execute}\"";
         return new ProcessStartInfo { FileName = "powershell.exe", Arguments = script, UseShellExecute = false };
     }
 
-    private static ProcessStartInfo GetBashInfo(string fileName, string arguments, int pid) {
-        var execute = $"\"{fileName}\" {arguments}";
+    private static ProcessStartInfo GetBashInfo(string rootDir, string fileName, string arguments, int pid) {
+        var execute = $"cp -r \"{Path.Combine(rootDir, "Bootstrap", "*")}\" Bootstrap && "
+                      + $"cp -r \"{Path.Combine(rootDir, "Doorstop", "*")}\" . && "
+                      + $"cp \"{Path.Combine(rootDir, "Doorstop", ".*")}\" . &&"
+                      + $"\"{fileName}\" {arguments}";
         var monitor = $"while kill -0 {pid} 2>/dev/null; do sleep 0.5; done";
         var script = $"-c '{monitor}; {execute}";
         return new ProcessStartInfo { FileName = "bash", Arguments = script, UseShellExecute = false };
-    }
-}
-
-internal class Test2 {
-    public int a;
-}
-
-internal static class Test {
-    [FreePatch("test", "Assembly-CSharp.dll", [])]
-    internal static bool FreePatch(ModuleDefinition module) {
-        Log.Message("Patching FreePatch");
-        var type = module.GetType("RimWorld.Ability");
-        type.Fields.Add(new FieldDefinition("myField", FieldAttributes.Public, module.TypeSystem.Boolean));
-        Log.Message("Free Patch Complete");
-        return true;
-    }
-
-    [AddField] [DefaultValueInjector("Inject2")] internal static extern ref double test(this Def instance);
-    [AddField] [DefaultValueInjector("Inject")] internal static extern ref double test2(this Def instance);
-
-    internal static double Inject() {
-        return 1.0;
-    }
-
-    internal static double Inject2(Def def) {
-        var b = def.label;
-        return b?.Length ?? 12;
     }
 }

@@ -1,13 +1,10 @@
-﻿using System.Runtime.InteropServices;
-// ReSharper disable once CheckNamespace
-
-namespace BootstrapApi;
+﻿namespace BootstrapApi;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class AddFieldAttribute : Attribute;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class FreePatchAttribute(string id, string module, string[] importModules) : Attribute {
+public class FreePatchAttribute(string id, string module, params string[] importModules) : Attribute {
     public readonly string ID = id;
     public readonly string Module = module;
     public readonly string[] ImportModules = importModules;
@@ -20,7 +17,11 @@ public class DefaultValueDirectAttribute(object value) : Attribute;
 public class DefaultValueInjectorAttribute(string method) : Attribute;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class InjectComponentAttribute : Attribute;
+public class PostInitFieldAttribute : Attribute {
+    public PostInitFieldAttribute() { }
 
-[AttributeUsage(AttributeTargets.Method)]
-public class InjectModExtensionAttribute : Attribute;
+    public PostInitFieldAttribute(Type baseType) { }
+
+    public PostInitFieldAttribute(Type baseType, Type fieldType) { }
+}
+

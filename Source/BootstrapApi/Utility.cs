@@ -1,17 +1,17 @@
 using System.Reflection;
-
-using BootstrapApi.Logger;
-
-using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 using MonoMod.Utils;
 
-namespace Bootstrap;
+using Serilog;
 
-public static class Utility {
+namespace BootstrapApi;
+
+public static class BootstrapUtility {
     private static readonly char[] HexChars = "0123456789abcdef".ToCharArray();
     private static readonly char[] UpperHexChars = "0123456789ABCDEF".ToCharArray();
 
@@ -49,8 +49,8 @@ public static class Utility {
         if (result is CustomAttributeArgument argument) return (T)argument.Value;
         return (T)result;
     }
-    
-    internal static void InsertBefore(
+
+    public static void InsertBefore(
         MethodDefinition method, Func<Instruction, bool> predicate, List<Instruction> toInsert) {
         var instructions = method.Body.Instructions;
         var il = method.Body.GetILProcessor();
@@ -67,5 +67,55 @@ public static class Utility {
             instructions.InsertRange(i, finalToInsert);
             i += finalToInsert.Count;
         }
+    }
+
+    public static Type? ToType(this TypeReference definition) {
+        return AppDomain.CurrentDomain.GetAssemblies().Select(x => x.GetType(definition.FullName))
+                        .FirstOrDefault(x => x != null);
+    }
+
+    public static string ToSHA256Hex(this byte[] bytes) {
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(bytes).ToHexString();
+    }
+
+    public static void RollLogFile(string logFile, int maxCount = 5) {
+        if (!File.Exists(logFile)) return;
+
+        var logFilePath = Path.GetDirectoryName(logFile)!;
+        var logFileName = Path.GetFileNameWithoutExtension(logFile)!;
+        var logFileExt = Path.GetExtension(logFile)!.Substring(1);
+        var timestamp = DateTime.Now.ToString(TimestampPattern());
+        File.Move(logFile, Path.Combine(logFilePath, $"{logFileName}-{timestamp}.{logFileExt}"));
+        Directory.EnumerateFiles(logFilePath)
+                 .Where(x => Path.GetFileName(x).StartsWith(logFileName))
+                 .Where(x => Regex.IsMatch(
+                     Path.GetFileName(x),
+                     $"^{logFileName}-[0-9]{{{TimestampPattern().Length}}}\\.{logFileExt}$"))
+                 .OrderByDescending(x =>
+                     long.Parse(Regex.Match(x, $"(?<={logFileName}-)[0-9]{{{TimestampPattern().Length}}}").Value))
+                 .Skip(maxCount)
+                 .ToList()
+                 .ForEach(File.Delete);
+        return;
+
+        static string TimestampPattern() {
+            return "yyyyMMddHHmmss";
+        }
+    }
+
+    public static bool TryGetCommandLineArg(string key, out string value) {
+        var result = Environment.GetCommandLineArgs()
+                                .Where(x => x.StartsWith($"-{key}="))
+                                .Select(x => x.Split('='))
+                                .Where(x => x.Length == 2)
+                                .Select(x => x[1])
+                                .FirstOrDefault();
+        value = result!;
+        return result != null;
+    }
+
+    public static bool ShouldIntercept() {
+        return TryGetCommandLineArg("bootstrap", out var bootstrap) && bootstrap == "bootstrap";
     }
 }

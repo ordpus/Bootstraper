@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Bootstrap;
+namespace BootstrapApi;
 
 public static class BootstrapData {
     public const string AssemblyDatFile = "Bootstrap/data/AssemblyData.bin";

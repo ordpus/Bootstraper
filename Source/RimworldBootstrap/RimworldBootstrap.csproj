@@ -5,7 +5,7 @@
         <Product>My first plugin</Product>
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>default</LangVersion>
         <RestoreAdditionalProjectSources>
             https://api.nuget.org/v3/index.json;
             https://nuget.bepinex.dev/v3/index.json;
@@ -22,7 +22,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4566" />
+        <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4566"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -32,8 +32,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="BootstrapApi">
-        <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
-      </Reference>
+        <Reference Include="Bootstrap">
+            <HintPath>..\..\..\..\Bootstrap\core\Bootstrap.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="BootstrapApi">
+            <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
     </ItemGroup>
 </Project>

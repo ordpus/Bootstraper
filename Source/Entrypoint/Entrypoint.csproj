@@ -9,7 +9,7 @@
         <LangVersion>default</LangVersion>
         <RootNamespace>Entrypoint</RootNamespace>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>../../../../Bootstrap/core</OutputPath>
+        <OutputPath>../../Bootstrap/core</OutputPath>
         <PackageId>Entrypoint</PackageId>
     </PropertyGroup>
 
@@ -18,6 +18,15 @@
             <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
         </Reference>
     </ItemGroup>
+
+    <Target Name="CopyToDestination" AfterTargets="Build">
+        <Copy SourceFiles="../../Bootstrap/core/Entrypoint.dll"
+              DestinationFiles="../../../../Bootstrap/core/Entrypoint.dll"
+              OverwriteReadOnlyFiles="true"/>
+        <Copy SourceFiles="../../Bootstrap/core/Entrypoint.pdb"
+              DestinationFiles="../../../../Bootstrap/core/Entrypoint.pdb"
+              OverwriteReadOnlyFiles="true"/>
+    </Target>
 
 
 </Project>

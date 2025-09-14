@@ -7,11 +7,6 @@
 
         <ItemGroup>
             <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Memory.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Buffers.dll"/>
-            <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Logging.Abstractions.dll"/>
-            <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.DependencyInjection.Abstractions.dll"/>
-            <InputAssemblies Include="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll"/>
             <InputAssemblies Include="$(OutputPath)Mono.Cecil.dll"/>
             <InputAssemblies Include="$(OutputPath)Mono.Cecil.Mdb.dll"/>
             <InputAssemblies Include="$(OutputPath)Mono.Cecil.Pdb.dll"/>
@@ -19,8 +14,12 @@
             <InputAssemblies Include="$(OutputPath)MonoMod.Backports.dll"/>
             <InputAssemblies Include="$(OutputPath)MonoMod.ILHelpers.dll"/>
             <InputAssemblies Include="$(OutputPath)MonoMod.Utils.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Numerics.Vectors.dll"/>
+            <InputAssemblies Include="$(OutputPath)Serilog.dll"/>
+            <InputAssemblies Include="$(OutputPath)Serilog.Sinks.File.dll"/>
+            <InputAssemblies Include="$(OutputPath)System.Buffers.dll"/>
             <InputAssemblies Include="$(OutputPath)System.Diagnostics.DiagnosticSource.dll"/>
+            <InputAssemblies Include="$(OutputPath)System.Memory.dll"/>
+            <InputAssemblies Include="$(OutputPath)System.Numerics.Vectors.dll"/>
             <InputAssemblies Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll"/>
             <InputAssemblies Include="$(OutputPath)System.Threading.Channels.dll"/>
             <InputAssemblies Include="$(OutputPath)System.Threading.Tasks.Extensions.dll"/>
@@ -28,13 +27,13 @@
         </ItemGroup>
 
         <ItemGroup>
-            <DoNotInternalizeAssemblies Include="Microsoft.Extensions.Logging.Abstractions"/>
             <DoNotInternalizeAssemblies Include="Mono.Cecil"/>
             <DoNotInternalizeAssemblies Include="Mono.Cecil.Mdb"/>
             <DoNotInternalizeAssemblies Include="Mono.Cecil.Pdb"/>
             <DoNotInternalizeAssemblies Include="Mono.Cecil.Rocks"/>
             <DoNotInternalizeAssemblies Include="MonoMod.ILHelpers"/>
             <DoNotInternalizeAssemblies Include="MonoMod.Utils"/>
+            <DoNotInternalizeAssemblies Include="Serilog"/>
             <DoNotInternalizeAssemblies Include="System.Threading.Channels"/>
         </ItemGroup>
 
@@ -48,8 +47,16 @@
                 InputAssemblies="@(InputAssemblies)"
                 InternalizeExclude="@(DoNotInternalizeAssemblies)"
                 TargetKind="Dll"
-                OutputFile="../../../../Bootstrap/core/$(AssemblyName).dll"
+                OutputFile="../../Bootstrap/core/$(AssemblyName).dll"
         />
+
+        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).dll"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).dll"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).pdb"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).pdb"
+              OverwriteReadOnlyFiles="true"/>
     </Target>
-    
+
 </Project>
