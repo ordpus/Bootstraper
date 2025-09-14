@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFrameworks>net48;netstandard2.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Product>Bootstrap</Product>
@@ -9,25 +9,87 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RootNamespace>Bootstrap</RootNamespace>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <PackageId>Bootstrap</PackageId>
         <AssemblyName>Bootstrap</AssemblyName>
+        <Authors>Ordpus</Authors>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageId>Bootstrap.Unity.Dev</PackageId>
+        <Copyright>Ordpus</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/ordpus/Bootstraper</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/ordpus/Bootstraper</RepositoryUrl>
+        <Description>A bootstrap framework for Unity, based on doorstop, enable developers to manipulate assemblies and inject their own code.</Description>
+        <PackageTags>Unity,Bootstrap,Dev</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <PackageOutputPath>../nupkgs</PackageOutputPath>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="BootstrapApi">
-            <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
-        </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0"/>
         <PackageReference Include="System.Buffers" Version="4.6.1"/>
         <PackageReference Include="System.Memory" Version="4.6.3"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Bootstrap.Unity.Dev.targets" Pack="true" PackagePath="build\" Visible="false"/>
+        <Content Include="Bootstrap.Unity.Dev.targets" Pack="true" PackagePath="buildTransitive\" Visible="false"/>
+    </ItemGroup>
+
+    <Target Name="IncludeMergedAssemblies" BeforeTargets="Build">
+        <ItemGroup>
+            <_Framework Include="$(TargetFrameworks)"/>
+        </ItemGroup>
+
+        <ItemGroup>
+            <Content Include="$(OutputPath)%(_Framework.Identity)/Merged/$(AssemblyName).dll"
+                     Pack="true"
+                     PackagePath="runtimes\any\lib\%(_Framework.Identity)\"
+                     Visible="false"/>
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <Reference Include="BootstrapApi" Condition="'$(TargetFramework)' != ''">
+            <HintPath>$(SolutionDir)BootstrapApi\$(OutputPath)Merged\BootstrapApi.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <Target Name="CopyBootstrapFiles"
+            Condition="$(Configuration) == 'Release' and '$(TargetFramework)' == 'net48'"
+            DependsOnTargets="ILRepacker"
+            AfterTargets="ILRepacker">
+
+        <Copy SourceFiles="$(OutputPath)Merged\$(AssemblyName).dll"
+              DestinationFiles="../../Bootstrap/core/$(AssemblyName).dll"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="$(OutputPath)Merged\$(AssemblyName).pdb"
+              DestinationFiles="../../Bootstrap/core/$(AssemblyName).pdb"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="$(OutputPath)Merged\$(AssemblyName).dll"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).dll"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="$(OutputPath)Merged\$(AssemblyName).pdb"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).pdb"
+              OverwriteReadOnlyFiles="true"/>
+    </Target>
+
+    <Target Name="BuildBootstrapApiFirst" BeforeTargets="ResolveAssemblyReferences">
+        <Message Text="Building BootstrapApi first..." Importance="high"/>
+        <MSBuild Projects="../BootstrapApi/BootstrapApi.csproj"
+                 Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)"
+                 Targets="Build"
+                 RebaseOutputs="true"/>
+    </Target>
 
 </Project>

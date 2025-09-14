@@ -4,7 +4,7 @@
 public class AddFieldAttribute : Attribute;
 
 [AttributeUsage(AttributeTargets.Method)]
-public class FreePatchAttribute(string id, string module, params string[] importModules) : Attribute {
+public class BootstrapFreePatchAttribute(string id, string module, params string[] importModules) : Attribute {
     public readonly string ID = id;
     public readonly string Module = module;
     public readonly string[] ImportModules = importModules;

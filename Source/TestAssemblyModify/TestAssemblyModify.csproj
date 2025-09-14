@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net48;netstandard2.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <PackAsTool>true</PackAsTool>
+        <Nullable>enable</Nullable>
+        <LangVersion>default</LangVersion>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="BootstrapApi" Condition="'$(TargetFramework)' != ''">
+            <HintPath>$(SolutionDir)BootstrapApi\$(OutputPath)Merged\BootstrapApi.dll</HintPath>
+        </Reference>
+        <Reference Include="Bootstrap" Condition="'$(TargetFramework)' != ''">
+            <HintPath>$(SolutionDir)Bootstrap\$(OutputPath)Merged\Bootstrap.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Publicize Include="Bootstrap:Bootstrap.AssemblySet.SAssemblyDefinitions"/>
+        <Publicize Include="Bootstrap:Bootstrap.AssemblySet.SModuleDefinitions"/>
+        <Publicize Include="Bootstrap:Bootstrap.AssemblySet.s_assemblyResolver"/>
+        <Publicize Include="Bootstrap:Bootstrap.AssemblySet.s_metadataResolver"/>
+    </ItemGroup>
+
+</Project>

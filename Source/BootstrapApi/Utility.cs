@@ -69,11 +69,6 @@ public static class BootstrapUtility {
         }
     }
 
-    public static Type? ToType(this TypeReference definition) {
-        return AppDomain.CurrentDomain.GetAssemblies().Select(x => x.GetType(definition.FullName))
-                        .FirstOrDefault(x => x != null);
-    }
-
     public static string ToSHA256Hex(this byte[] bytes) {
         using var sha256 = SHA256.Create();
         return sha256.ComputeHash(bytes).ToHexString();
@@ -117,5 +112,33 @@ public static class BootstrapUtility {
 
     public static bool ShouldIntercept() {
         return TryGetCommandLineArg("bootstrap", out var bootstrap) && bootstrap == "bootstrap";
+    }
+
+    public static string FullNameWithoutGeneric(this TypeReference type) {
+        var fullName = type.FullName;
+        var genericMarkerIndex = fullName.IndexOf('<');
+        return genericMarkerIndex != -1 ? fullName.Substring(0, genericMarkerIndex) : fullName;
+    }
+
+    public static void Bfs<T>(
+        T root, Func<T, IEnumerable<T>> getChildren, Func<T, bool> action, IEqualityComparer<T>? comparer = null) =>
+        Bfs([root], getChildren, action);
+
+    public static void Bfs<T>(
+        IEnumerable<T> roots, Func<T, IEnumerable<T>> getChildren, Func<T, bool> action,
+        IEqualityComparer<T>? comparer = null) {
+        if (roots == null) throw new ArgumentNullException(nameof(roots));
+        if (getChildren == null) throw new ArgumentNullException(nameof(getChildren));
+        if (action == null) throw new ArgumentNullException(nameof(action));
+        roots = roots.ToList();
+        if (roots.Any(x => x == null)) throw new ArgumentException("roots contains null");
+        var queue = new Queue<T>(roots);
+        var visited = new HashSet<T>(comparer);
+        while (queue.Count > 0) {
+            var current = queue.Dequeue();
+            if (!visited.Add(current)) continue;
+            if (action(current)) return;
+            foreach (var child in getChildren(current) ?? []) queue.Enqueue(child);
+        }
     }
 }

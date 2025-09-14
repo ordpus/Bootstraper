@@ -26,6 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Publicize Include="Assembly-CSharp:Verse.HediffWithComps.InitializeComps"/>
         <Publicize Include="Assembly-CSharp:Verse.LongEventHandler.toExecuteWhenFinished"/>
         <Publicize Include="Assembly-CSharp:Verse.KeyPrefs.data"/>
         <Publicize Include="mscorlib:System.Reflection.RuntimeAssembly"/>

@@ -6,12 +6,8 @@
         </PropertyGroup>
 
         <ItemGroup>
-            <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Memory.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Buffers.dll"/>
-            <InputAssemblies Include="$(OutputPath)Microsoft.Bcl.HashCode.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Numerics.Vectors.dll"/>
+            <InputAssemblies Include="$(OutputPath)*.dll"/>
+            <InputAssemblies Remove="$(OutputPath)BootstrapApi.dll"/>
         </ItemGroup>
 
         <ILRepack
@@ -24,16 +20,8 @@
                 InputAssemblies="@(InputAssemblies)"
                 InternalizeExclude="@(DoNotInternalizeAssemblies)"
                 TargetKind="Dll"
-                OutputFile="../../Bootstrap/core/$(AssemblyName).dll"
+                OutputFile="$(OutputPath)Merged\$(AssemblyName).dll"
         />
-
-        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).dll"
-              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).dll"
-              OverwriteReadOnlyFiles="true"/>
-
-        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).pdb"
-              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).pdb"
-              OverwriteReadOnlyFiles="true"/>
     </Target>
 
 </Project>

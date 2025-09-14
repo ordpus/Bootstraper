@@ -1,30 +1,41 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFrameworks>net48;netstandard2.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Product>Entrypoint</Product>
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>default</LangVersion>
         <RootNamespace>Entrypoint</RootNamespace>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>../../Bootstrap/core</OutputPath>
         <PackageId>Entrypoint</PackageId>
+        <AssemblyName>Entrypoint</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="BootstrapApi">
-            <HintPath>..\..\..\..\Bootstrap\core\BootstrapApi.dll</HintPath>
+        <Reference Include="BootstrapApi" Condition="'$(TargetFramework)' != ''">
+            <HintPath>$(SolutionDir)BootstrapApi\$(OutputPath)Merged\BootstrapApi.dll</HintPath>
         </Reference>
     </ItemGroup>
 
-    <Target Name="CopyToDestination" AfterTargets="Build">
-        <Copy SourceFiles="../../Bootstrap/core/Entrypoint.dll"
-              DestinationFiles="../../../../Bootstrap/core/Entrypoint.dll"
+    <Target Name="CopyBootstrapFiles"
+            Condition="$(Configuration) == 'Release' and '$(TargetFramework)' == 'net48'"
+            AfterTargets="Build">
+
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
+              DestinationFiles="../../Bootstrap/core/$(AssemblyName).dll"
               OverwriteReadOnlyFiles="true"/>
-        <Copy SourceFiles="../../Bootstrap/core/Entrypoint.pdb"
-              DestinationFiles="../../../../Bootstrap/core/Entrypoint.pdb"
+
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).pdb"
+              DestinationFiles="../../Bootstrap/core/$(AssemblyName).pdb"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).dll"
+              OverwriteReadOnlyFiles="true"/>
+
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).pdb"
+              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).pdb"
               OverwriteReadOnlyFiles="true"/>
     </Target>
 

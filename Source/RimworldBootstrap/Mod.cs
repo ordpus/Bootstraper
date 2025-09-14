@@ -15,6 +15,7 @@ using System.Threading;
 using Bootstrap.Patcher;
 
 using RimWorld;
+using RimWorld.Planet;
 
 using UnityEngine;
 
@@ -26,6 +27,7 @@ namespace RimWorldBootstrap;
 // ReSharper disable once ClassNeverInstantiated.Global
 public class RimWorldBootstrapMod : Mod {
     internal const string Arg = "bootstrap";
+    internal const string RestartArg = "bootstrap_restart_time";
 
     public RimWorldBootstrapMod(ModContentPack content) : base(content) {
         if (!AppDomain.CurrentDomain.GetAssemblies().Any(x => x.GetName().Name.Equals("BootstrapApi.dll"))) {
@@ -37,11 +39,10 @@ public class RimWorldBootstrapMod : Mod {
             CommandlineUtil.Restart(content.RootDir, "copy");
         else if (ShouldReload()) {
             Patch();
-            // PopupWindow("bootstrap");
             CommandlineUtil.Restart(content.RootDir, "bootstrap");
         }
 
-        if (ShouldPopupWindow()) PopupWindow("test");
+        if (ShouldPopupWindow()) PopupWindow(null);
     }
 
     private static void Patch() {
@@ -50,13 +51,19 @@ public class RimWorldBootstrapMod : Mod {
             new PostInitInfo(
                 typeof(ThingWithComps),
                 typeof(ThingComp),
-                AssemblySet.FindMethodDefinition(
-                    $"{typeof(ThingWithComps).FullName}:{nameof(ThingWithComps.InitializeComps)}")!,
-                new DefaultPostInitProvider(nameof(ThingWithComps.GetComp))));
+                nameof(ThingWithComps.InitializeComps),
+                new DefaultPostInitProvider(
+                    $"{typeof(ThingWithComps).FullName}:{nameof(ThingWithComps.GetComp)}")));
+        BootstrapPluginManager.Register(
+            new PostInitInfo(
+                typeof(HediffWithComps),
+                typeof(HediffComp),
+                nameof(HediffWithComps.InitializeComps),
+                new DefaultPostInitProvider($"{typeof(HediffWithComps).FullName}:{nameof(HediffWithComps.GetComp)}")));
         Patcher.Patch();
     }
 
-    private static void PopupWindow(string phase) {
+    private static void PopupWindow(string? phase) {
         LongEventHandler.ClearQueuedEvents();
         LongEventHandler.toExecuteWhenFinished.Clear();
 
@@ -103,24 +110,32 @@ public class RimWorldBootstrapMod : Mod {
     }
 }
 
-public class UIRoot_RimworldBootstrap(string phase) : UIRoot {
+public class UIRoot_RimworldBootstrap(string? phase) : UIRoot {
     public override void UIRootOnGUI() {
         base.UIRootOnGUI();
-        if (Widgets.ButtonText(new Rect(500, 500, 500, Text.LineHeight * 2), "OK", true, false))
-            CommandlineUtil.Restart(LoadedModManager.GetMod<RimWorldBootstrapMod>().Content.RootDir, phase);
+        Widgets.Label(
+            new Rect(500, 500, 500, Text.LineHeight * 2),
+            "RimWorldBootstrap.Error".Translate());
+        if (Widgets.ButtonText(new Rect(500, 500 + Text.LineHeight * 2, 100, Text.LineHeight * 2), "OK", true, false))
+            Environment.Exit(1);
     }
 }
 
 internal static class CommandlineUtil {
     private static int s_starting;
 
-    public static void Restart(string rootDir, string phase) {
+    public static void Restart(string rootDir, string? phase) {
         if (Interlocked.CompareExchange(ref s_starting, 1, 0) == 1) return;
         try {
             var commandLineArgs = Environment.GetCommandLineArgs();
             var fileName = commandLineArgs[0];
+            var bootstrapRestartTime =
+                GenCommandLine.TryGetCommandLineArg(RimWorldBootstrapMod.RestartArg, out var time)
+                    ? int.Parse(time)
+                    : 0;
+            if (bootstrapRestartTime > 5) phase = "error";
             var arguments =
-                $"{string.Join(" ", commandLineArgs[1..].Where(x => !x.StartsWith("-bootstrap=")))} -{RimWorldBootstrapMod.Arg}={phase}";
+                $"{string.Join(" ", commandLineArgs[1..].Where(x => !x.StartsWith("-bootstrap=")).Where(x => !x.StartsWith("-bootstrap_restart_time=")))} {(phase == null ? "" : $"-{RimWorldBootstrapMod.Arg}={phase}")} -{RimWorldBootstrapMod.RestartArg}={bootstrapRestartTime}";
             var pid = Process.GetCurrentProcess().Id;
             var info = UnityData.platform == RuntimePlatform.WindowsPlayer
                 ? GetPowershellInfo(rootDir, fileName, arguments, pid)

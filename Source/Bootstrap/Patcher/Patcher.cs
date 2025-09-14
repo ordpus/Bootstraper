@@ -28,35 +28,38 @@ public class Patcher {
         if (Interlocked.CompareExchange(ref s_patched, 1, 0) == 1) return;
         Log.Logger.Information("Begin patch");
         try {
-            new Patcher().DoAllPatches();
+            var result = GetAllPatches().Select(x => x.GetRawBytes()).ToList();
+            using var writer = new BinaryWriter(
+                new FileStream(
+                    BootstrapData.AssemblyDatFile,
+                    FileMode.OpenOrCreate,
+                    FileAccess.Write));
+            writer.Write(result.Count);
+            foreach (var bytes in result) {
+                writer.Write(bytes.Length);
+                writer.Write(bytes);
+            }
+
+            writer.Flush();
         } catch (Exception e) {
             Log.Logger.Error(e, "Error patch");
             throw;
         }
     }
 
-    private void DoAllPatches() {
+    public static List<AssemblyDefinition> GetAllPatches() {
+        return new Patcher().DoAllPatches();
+    }
+
+    private List<AssemblyDefinition> DoAllPatches() {
         RuntimeHelpers.RunClassConstructor(typeof(AddFieldPatcher).TypeHandle);
         var addFieldModules = new AddFieldPatcher(BootstrapPluginManager.AddFieldPlugins).Patch();
         var freePatchModules = DoFreePatch();
-        var result = freePatchModules.Concat(addFieldModules)
+        return freePatchModules.Concat(addFieldModules)
                                      .Distinct()
                                      .Select(x => x.Assembly)
                                      .Distinct()
-                                     .Select(x => x.GetRawBytes())
                                      .ToList();
-        using var writer = new BinaryWriter(
-            new FileStream(
-                BootstrapData.AssemblyDatFile,
-                FileMode.OpenOrCreate,
-                FileAccess.Write));
-        writer.Write(result.Count);
-        foreach (var bytes in result) {
-            writer.Write(bytes.Length);
-            writer.Write(bytes);
-        }
-
-        writer.Flush();
     }
 
     private List<ModuleDefinition> DoFreePatch() {
@@ -64,7 +67,7 @@ public class Patcher {
                         .GetAssemblies()
                         .SelectMany(x => x.GetTypes())
                         .SelectMany(x => x.GetMethods(All))
-                        .Where(x => Attribute.IsDefined(x, typeof(FreePatchAttribute), true))
+                        .Where(x => Attribute.IsDefined(x, typeof(BootstrapFreePatchAttribute), true))
                         .Where(FreePatchMethodValidate)
                         .Select(ExecuteFreePatch)
                         .Where(x => x != null)
@@ -75,7 +78,7 @@ public class Patcher {
     
 
     private ModuleDefinition? ExecuteFreePatch(MethodInfo method) {
-        var attribute = method.GetCustomAttribute<FreePatchAttribute>();
+        var attribute = method.GetCustomAttribute<BootstrapFreePatchAttribute>();
         try {
             return (bool)method.Invoke(
                 null,
@@ -100,7 +103,7 @@ public class Patcher {
         return MethodValidate() && MethodParameterValidate() && PatchModuleValidate();
 
         bool MethodValidate() {
-            var attribute = method.GetCustomAttribute<FreePatchAttribute>();
+            var attribute = method.GetCustomAttribute<BootstrapFreePatchAttribute>();
             if (!method.IsStatic) {
                 Log.Logger.Error("Free Patch {id} is not static", attribute.ID);
                 return false;
@@ -116,7 +119,7 @@ public class Patcher {
 
         bool MethodParameterValidate() {
             var parameters = method.GetParameters().ToList();
-            var attribute = method.GetCustomAttribute<FreePatchAttribute>();
+            var attribute = method.GetCustomAttribute<BootstrapFreePatchAttribute>();
             if (parameters.Count is > 2 or 0) {
                 Log.Logger.Error(
                     "Free Patch {id} has invalid parameters count {parametersCount}, expected 1 to 2",
@@ -147,7 +150,7 @@ public class Patcher {
         }
 
         bool PatchModuleValidate() {
-            var attribute = method.GetCustomAttribute<FreePatchAttribute>();
+            var attribute = method.GetCustomAttribute<BootstrapFreePatchAttribute>();
             if (AssemblySet.Modules.ContainsKey(attribute.Module)) return true;
             Log.Logger.Warning("Free Patch {id} not found module {module}", attribute.ID, attribute.Module);
             return false;

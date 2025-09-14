@@ -1,29 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Target Name="ILRepacker" AfterTargets="Build">
+    <Target Name="ILRepacker"
+            AfterTargets="Build"
+            BeforeTargets="Built"
+            DependsOnTargets="Build">
         <PropertyGroup>
             <DebugInfo>true</DebugInfo>
         </PropertyGroup>
 
         <ItemGroup>
-            <InputAssemblies Include="$(OutputPath)$(AssemblyName).dll"/>
-            <InputAssemblies Include="$(OutputPath)Mono.Cecil.dll"/>
-            <InputAssemblies Include="$(OutputPath)Mono.Cecil.Mdb.dll"/>
-            <InputAssemblies Include="$(OutputPath)Mono.Cecil.Pdb.dll"/>
-            <InputAssemblies Include="$(OutputPath)Mono.Cecil.Rocks.dll"/>
-            <InputAssemblies Include="$(OutputPath)MonoMod.Backports.dll"/>
-            <InputAssemblies Include="$(OutputPath)MonoMod.ILHelpers.dll"/>
-            <InputAssemblies Include="$(OutputPath)MonoMod.Utils.dll"/>
-            <InputAssemblies Include="$(OutputPath)Serilog.dll"/>
-            <InputAssemblies Include="$(OutputPath)Serilog.Sinks.File.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Buffers.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Diagnostics.DiagnosticSource.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Memory.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Numerics.Vectors.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Threading.Channels.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.Threading.Tasks.Extensions.dll"/>
-            <InputAssemblies Include="$(OutputPath)System.ValueTuple.dll"/>
+            <InputAssemblies Include="$(OutputPath)*.dll"/>
         </ItemGroup>
 
         <ItemGroup>
@@ -47,16 +33,9 @@
                 InputAssemblies="@(InputAssemblies)"
                 InternalizeExclude="@(DoNotInternalizeAssemblies)"
                 TargetKind="Dll"
-                OutputFile="../../Bootstrap/core/$(AssemblyName).dll"
+                OutputFile="$(OutputPath)Merged\$(AssemblyName).dll"
         />
 
-        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).dll"
-              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).dll"
-              OverwriteReadOnlyFiles="true"/>
-
-        <Copy SourceFiles="../../Bootstrap/core/$(AssemblyName).pdb"
-              DestinationFiles="../../../../Bootstrap/core/$(AssemblyName).pdb"
-              OverwriteReadOnlyFiles="true"/>
     </Target>
 
 </Project>
